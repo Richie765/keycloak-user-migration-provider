@@ -24,15 +24,20 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.storage.user.UserRegistrationProvider;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -47,13 +52,18 @@ import java.util.Set;
  *
  * @author Scott Rossillo
  */
-public class RemoteUserFederationProvider implements UserFederationProvider {
+public class RemoteUserFederationProvider implements
+        UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputValidator,
+        CredentialInputUpdater,
+        UserRegistrationProvider {
 
     private static final Logger LOG = Logger.getLogger(RemoteUserFederationProvider.class);
     private static final Set<String> supportedCredentialTypes = Collections.singleton(UserCredentialModel.PASSWORD);
 
     private KeycloakSession session;
-    private UserFederationProviderModel model;
+    protected ComponentModel model;
     private final FederatedUserService federatedUserService;
 
     private static FederatedUserService buildClient(String uri) {
@@ -67,24 +77,26 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
                 .build();
     }
 
-    public RemoteUserFederationProvider(KeycloakSession session, UserFederationProviderModel model, String uri) {
+    // Constructor
+
+    public RemoteUserFederationProvider(KeycloakSession session, ComponentModel model, String uri) {
         this(session, model, buildClient(uri));
         LOG.debugf("Using validation base URI: " + uri);
     }
 
-    protected RemoteUserFederationProvider(KeycloakSession session, UserFederationProviderModel model, FederatedUserService federatedUserService) {
+    protected RemoteUserFederationProvider(KeycloakSession session, ComponentModel model, FederatedUserService federatedUserService) {
         this.session = session;
         this.model = model;
         this.federatedUserService = federatedUserService;
     }
 
-    @Override
-    public boolean synchronizeRegistrations() {
-        return false;
-    }
 
+
+    // UserRegistrationProvider - remove?
+
+    // was register before 2.5.0
     @Override
-    public UserModel register(RealmModel realm, UserModel user) {
+    public UserModel addUser(RealmModel realm, String username) {
         LOG.warn("User registration not supported.");
         return null;
     }
@@ -94,12 +106,15 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         return true;
     }
 
+    // ??
+
     private UserModel createUserModel(RealmModel realm, String rawUsername) throws NotFoundException {
 
         String username = rawUsername.toLowerCase().trim();
         FederatedUserModel remoteUser = federatedUserService.getUserDetails(username);
         LOG.infof("Creating user model for: %s", username);
-        UserModel userModel = session.userStorage().addUser(realm, username);
+        // Was useStorage
+        UserModel userModel = session.userLocalStorage().addUser(realm, username);
 
         if (!username.equals(remoteUser.getEmail())) {
             throw new IllegalStateException(String.format("Local and remote users differ: [%s != %s]", username, remoteUser.getUsername()));
@@ -131,20 +146,12 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         return userModel;
     }
 
-    @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
-        LOG.infof("Get by username: %s", username);
 
-        try {
-            return this.createUserModel(realm, username);
-        } catch (NotFoundException ex) {
-            LOG.errorf("Federated user not found: %s", username);
-            return null;
-        }
-    }
+
+    // UserLookupProvider
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         LOG.infof("Get by email: %s", email);
 
         try {
@@ -155,17 +162,47 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         }
     }
 
+    // Added 2.5.0
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        LOG.debug("In searchByAttributes(): " + attributes);
-        return Collections.emptyList();
+    public UserModel getUserById(String id, RealmModel realm) {
+        StorageId storageId = new StorageId(id);
+        String username = storageId.getExternalId();
+        return getUserByUsername(username, realm);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        LOG.debug("Empty Group Member");
-        return Collections.emptyList();
+    public UserModel getUserByUsername(String username, RealmModel realm) {
+        LOG.infof("Get by username: %s", username);
+
+        try {
+            return this.createUserModel(realm, username);
+        } catch (NotFoundException ex) {
+            LOG.errorf("Federated user not found: %s", username);
+            return null;
+        }
     }
+
+
+    // UserQueryProvider (not implemented)
+
+    // Removed 2.5.0
+    // @Override
+    // public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    //     LOG.debug("Empty Group Member");
+    //     return Collections.emptyList();
+    // }
+
+    // Removed 2.5.0
+    // @Override
+    // public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
+    //     LOG.debug("In searchByAttributes(): " + attributes);
+    //     return Collections.emptyList();
+    // }
+        
+
+
+
+    // UserStorageProvider
 
     @Override
     public void preRemove(RealmModel realm) {
@@ -183,16 +220,37 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         // no-op
     }
 
+    @Override
+    public void close() {
+        // no-op
+    }
+
+
+
+
+    // LDAPStorageProvider - Not implemented
+
     // Removed 2.3.0
     // @Override
     // public Set<String> getSupportedCredentialTypes(UserModel user) {
     //     return supportedCredentialTypes;
     // }
 
-    @Override
-    public Set<String> getSupportedCredentialTypes() {
-        return supportedCredentialTypes;
-    }
+    // Removed 2.5.0
+    // @Override
+    // public Set<String> getSupportedCredentialTypes() {
+    //     return supportedCredentialTypes;
+    // }
+
+    // Removed 2.5.0
+    // @Override
+    // public boolean synchronizeRegistrations() {
+    //     return false;
+    // }
+
+
+
+    // CredentialInputValidator
 
     @Override
     public boolean isValid(RealmModel realm,UserModel user,CredentialInput input) {
@@ -212,22 +270,37 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         return true;
     }
 
+
+
+    // CredentialInputUpdater
+
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         // Need to fill 2.3.0
     }
     
     @Override
-    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        // Need to fill 2.3.0
-        return true;
-    }
-
-    @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
         // Need to fill 2.4.0
         return Collections.singleton(UserCredentialModel.KERBEROS);
     }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        // Need to fill 2.3.0
+        return true;
+    }    
+
+
+
+
+
+    // ??
+
+
+
+
+
 
     // Removed 2.3.0
     // @Override
@@ -257,28 +330,27 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
     //     return validCredentials(realm, user, Arrays.asList(input));
     // }
 
-    @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
-        return CredentialValidationOutput.failed();
-    }
+    // Removed 2.5.0
+    // @Override
+    // public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
+    //     return CredentialValidationOutput.failed();
+    // }
 
-    @Override
-    public UserModel validateAndProxy(RealmModel realm, UserModel local)
-    {
-        return local;
-    }
+    // Removed 2.5.0
+    // @Override
+    // public UserModel validateAndProxy(RealmModel realm, UserModel local)
+    // {
+    //     return local;
+    // }
 
-    @Override
-    public boolean isValid(RealmModel realm, UserModel local)
-    {
-        LOG.debugf("Checking if user is valid: %s", local.getUsername());
-        Response response = federatedUserService.validateUserExists(local.getUsername());
-        LOG.infof("Checked if %s is valid: %d", local.getUsername(), response.getStatus());
-        return HttpStatus.SC_OK == response.getStatus();
-    }
+    // Removed 2.5.0
+    // @Override
+    // public boolean isValid(RealmModel realm, UserModel local)
+    // {
+    //     LOG.debugf("Checking if user is valid: %s", local.getUsername());
+    //     Response response = federatedUserService.validateUserExists(local.getUsername());
+    //     LOG.infof("Checked if %s is valid: %d", local.getUsername(), response.getStatus());
+    //     return HttpStatus.SC_OK == response.getStatus();
+    // }
 
-    @Override
-    public void close() {
-        // no-op
-    }
 }
