@@ -25,7 +25,7 @@ version = '1.0.0' + (project.hasProperty('release') && project.ext.release ? '-R
 apply plugin: "com.github.zhurlik.jbossmodules"
 
 ext {
-    keycloakVersion = '1.9.8.Final'
+    keycloakVersion = '2.0.0.Final'
 }
 
 repositories {
