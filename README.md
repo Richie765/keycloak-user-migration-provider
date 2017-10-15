@@ -28,12 +28,12 @@ For an in depth look at how on demand user migration works, read our post,
 
 ### Install Keycloak
 
-Download [Keycloak 1.7.0.Final][2] and unzip / un-tar it. 
+Download [Keycloak 3.2.1.Final][2] and unzip / un-tar it. 
 
 ### Clone this Repository
 
 Clone this repository to your local workstation. You will have to edit `gradle.properties`
-to point to the location where you installed Keycloak 1.7.0.Final. This location should
+to point to the location where you installed Keycloak 3.2.1.Final. This location should
 not contain spaces in the path.
  
 ### Install the Federation Provider
@@ -47,14 +47,17 @@ From this repository, run:
 cd <path to keycloak>
 ```
 
-Open `standalone/configuration/keycloak-server.json` with your preferred text editor.
+On your production server, you may copy the generated `.jar` files to the `standalone/deployments/` directory.
+Keycloak will then install the providers in the correct location when it restarts.
+
+Open `standalone/configuration/standalone.xml` with your preferred text editor.
 Update the `"providers"` configuration to include `module:net.smartling.provider.federation`:
 
-``` json
-"providers": [
-  "classpath:${jboss.server.config.dir}/providers/*",
-  "module:net.smartling.provider.federation"
-],
+``` xml
+<providers>
+    <provider>classpath:${jboss.home.dir}/providers/*</provider>
+    <provider>module:net.smartling.provider.federation</provider>
+</providers>
 ```
 
 The federation provider can now be used from Keycloak.
@@ -103,5 +106,5 @@ For simplicity, all of the user's passwords are `Martini4`.
 
 [0]: http://keycloak.jboss.org/
 [1]: http://www.keycloak.org/docs/3.3/server_admin/topics/user-federation.html
-[2]: http://downloads.jboss.org/keycloak/1.7.0.Final/keycloak-1.7.0.Final.tar.gz
+[2]: https://downloads.jboss.org/keycloak/3.2.1.Final/keycloak-3.2.1.Final.tar.gz
 [3]: http://tech.smartling.com/migrate-to-keycloak-with-zero-downtime/
