@@ -185,23 +185,7 @@ public class RemoteUserFederationProvider implements
         }
     }
 
-
-    // UserQueryProvider (not implemented)
-
-    // Removed 2.5.0
-    // @Override
-    // public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-    //     LOG.debug("Empty Group Member");
-    //     return Collections.emptyList();
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-    //     LOG.debug("In searchByAttributes(): " + attributes);
-    //     return Collections.emptyList();
-    // }
-        
+   
 
 
 
@@ -234,7 +218,6 @@ public class RemoteUserFederationProvider implements
 
     @Override
     public boolean isConfiguredFor(RealmModel realm,UserModel user,String credentialType) {
-        // Need to fill 2.3.0
         return true;
     }
 
