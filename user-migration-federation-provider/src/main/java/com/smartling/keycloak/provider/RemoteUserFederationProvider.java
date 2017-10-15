@@ -57,7 +57,6 @@ import java.util.Set;
 public class RemoteUserFederationProvider implements
         UserStorageProvider,
         UserLookupProvider,
-        // UserRegistrationProvider,
         CredentialInputValidator,
         CredentialInputUpdater {
 
@@ -90,23 +89,6 @@ public class RemoteUserFederationProvider implements
         this.model = model;
         this.federatedUserService = federatedUserService;
     }
-
-
-
-    // UserRegistrationProvider - not implemented
-
-    // // was register before 2.5.0
-    // @Override
-    // public UserModel addUser(RealmModel realm, String username) {
-    //     LOG.warn("User registration not supported.");
-    //     return null;
-    // }
-
-    // @Override
-    // public boolean removeUser(RealmModel realm, UserModel user) {
-    //     return true;
-    // }
-
 
 
     // What does it do exactly?
