@@ -223,6 +223,12 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         return true;
     }
 
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        // Need to fill 2.4.0
+        return Collections.singleton(UserCredentialModel.KERBEROS);
+    }
+
     // Removed 2.3.0
     // @Override
     // public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
