@@ -20,16 +20,10 @@ import org.junit.Test;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.collections.Lists;
-
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,49 +45,34 @@ public class RemoteUserFederationProviderFactoryTest {
     private Scope config;
 
     @Mock
-    private UserFederationProviderModel userFederationProviderModel;
+    private UserStorageProviderModel userStorageProviderModel;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         factory = new RemoteUserFederationProviderFactory();
-        when(userFederationProviderModel.getConfig())
-                .thenReturn(Collections.singletonMap(RemoteUserFederationProviderFactory.PROP_USER_VALIDATION_URL, "https://fake.com"));
+        // when(userFederationProviderModel.getConfigProperties())
+        //         .thenReturn(Collections.singletonMap("base_uri", "https://fake.com"));
     }
 
     @Test
     public void testGetInstance() throws Exception {
-        UserFederationProvider provider = factory.getInstance(keycloakSession, userFederationProviderModel);
+        UserStorageProvider provider = factory.create(keycloakSession, userStorageProviderModel);
         assertNotNull(provider);
         assertTrue(provider instanceof RemoteUserFederationProvider);
     }
 
     @Test
     public void testGetConfigurationOptions() throws Exception {
-        Set<String> options = factory.getConfigurationOptions();
-        assertNotNull(options);
-        assertEquals(1, options.size());
-        assertEquals(RemoteUserFederationProviderFactory.PROP_USER_VALIDATION_URL, Lists.newArrayList(options).get(0));
+        // List<ProviderConfigProperty> options = factory.getConfigProperties();
+        // assertNotNull(options);
+        // assertEquals(1, options.size());
+        // assertEquals("base_uri", Lists.newArrayList(options).get(0));
     }
 
     @Test
     public void testGetId() throws Exception {
         assertEquals(RemoteUserFederationProviderFactory.PROVIDER_NAME, factory.getId());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSyncAllUsers() throws Exception {
-        String realmId = UUID.randomUUID().toString();
-        factory.syncAllUsers(keycloakSessionFactory, realmId, userFederationProviderModel);
-        verifyZeroInteractions(keycloakSession, keycloakSessionFactory, realmId, userFederationProviderModel);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSyncChangedUsers() throws Exception {
-        String realmId = UUID.randomUUID().toString();
-        Date lastSync = new Date();
-        factory.syncChangedUsers(keycloakSessionFactory, realmId, userFederationProviderModel, lastSync);
-        verifyZeroInteractions(keycloakSession, keycloakSessionFactory, realmId, userFederationProviderModel, lastSync);
     }
 
     @Test

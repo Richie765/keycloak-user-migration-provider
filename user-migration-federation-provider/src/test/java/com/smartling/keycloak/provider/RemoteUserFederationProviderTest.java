@@ -20,13 +20,11 @@ import com.smartling.keycloak.federation.FederatedUserService;
 import com.smartling.keycloak.federation.UserCredentialsDto;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationManager;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.mockito.Mock;
@@ -35,8 +33,6 @@ import org.mockito.internal.util.collections.Sets;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -73,7 +69,7 @@ public class RemoteUserFederationProviderTest {
     private RealmModel realmModel;
 
     @Mock
-    private UserFederationProviderModel userFederationProviderModel;
+    private UserStorageProviderModel userStorageProviderModel;
 
     @Mock
     private UserModel userModel;
@@ -81,18 +77,15 @@ public class RemoteUserFederationProviderTest {
     @Mock
     private UserProvider userProvider;
 
-    @Mock
-    private UserFederationManager userFederationManager;
-
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        provider = new RemoteUserFederationProvider(keycloakSession, userFederationProviderModel, federatedUserService);
+        provider = new RemoteUserFederationProvider(keycloakSession, userStorageProviderModel, federatedUserService);
         when(userModel.getUsername()).thenReturn(FEDERATED_USER_KNOWN_USERNAME);
         when(userModel.getEmail()).thenReturn(FEDERATED_USER_KNOWN_EMAIL);
         when(userModel.getId()).thenReturn(USER_ID);
 
-        when(keycloakSession.userStorage()).thenReturn(userProvider);
+        when(keycloakSession.userLocalStorage()).thenReturn(userProvider);
 
         when(userProvider.addUser(eq(realmModel), eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(mock(UserModel.class));
         when(userProvider.getUserByUsername(eq(KEYCLOAK_EXISTING_USER_USERNAME), eq(realmModel))).thenReturn(userModel);
@@ -114,31 +107,8 @@ public class RemoteUserFederationProviderTest {
     }
 
     @Test
-    public void testProxy() throws Exception {
-        assertEquals(userModel, provider.validateAndProxy(realmModel, userModel));
-    }
-
-    @Test
-    public void testSynchronizeRegistrations() throws Exception {
-        provider.synchronizeRegistrations();
-        verifyZeroInteractions(keycloakSession, realmModel, userModel);
-    }
-
-    @Test
-    public void testRegister() throws Exception {
-        assertNull(provider.register(realmModel, userModel));
-        verifyZeroInteractions(keycloakSession, realmModel, userModel, federatedUserService);
-    }
-
-    @Test
-    public void testRemoveUser() throws Exception {
-        assertTrue(provider.removeUser(realmModel, userModel));
-        verifyZeroInteractions(keycloakSession);
-    }
-
-    @Test
     public void testGetUserByUsername() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME, realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_EMAIL));
         verify(federatedUserService, never()).getUserDetails(eq(KEYCLOAK_EXISTING_USER_USERNAME));
     }
@@ -148,9 +118,9 @@ public class RemoteUserFederationProviderTest {
 
         when(federatedUserModel.getRoles()).thenReturn(Sets.newSet(FEDERATED_USER_ROLE));
         when(realmModel.getRole(FEDERATED_USER_ROLE)).thenReturn(mock(RoleModel.class));
-        when(keycloakSession.userStorage().addUser(eq(realmModel), eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(userModel);
+        when(keycloakSession.userLocalStorage().addUser(eq(realmModel), eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(userModel);
 
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME, realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_EMAIL));
         verify(userModel).grantRole(any(RoleModel.class));
     }
@@ -159,9 +129,9 @@ public class RemoteUserFederationProviderTest {
     public void testGetUserByUsernameWithNullRoles() throws Exception {
 
         when(federatedUserModel.getRoles()).thenReturn(null);
-        when(keycloakSession.userStorage().addUser(eq(realmModel), eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(userModel);
+        when(keycloakSession.userLocalStorage().addUser(eq(realmModel), eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(userModel);
 
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME, realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_EMAIL));
         verify(realmModel, never()).getRole(anyString());
         verify(userModel, never()).grantRole(any(RoleModel.class));
@@ -169,99 +139,62 @@ public class RemoteUserFederationProviderTest {
 
     @Test
     public void testGetUserByUsernameMixedCase() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME.toUpperCase()));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME.toUpperCase(), realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_USERNAME));
     }
 
     @Test
     public void testGetUserByUsernameWithLeadingSpace() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, " " + FEDERATED_USER_KNOWN_USERNAME));
+        assertNotNull(provider.getUserByUsername(" " + FEDERATED_USER_KNOWN_USERNAME, realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_USERNAME));
     }
 
     @Test
     public void testGetUserByUsernameWithLeadingAndTrailingSpace() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, " " + FEDERATED_USER_KNOWN_USERNAME + " \t"));
+        assertNotNull(provider.getUserByUsername(" " + FEDERATED_USER_KNOWN_USERNAME + " \t", realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_USERNAME));
     }
 
     @Test
     public void testGetUserByUsernameWithTrailingSpace() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME + "   "));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME + "   ", realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_USERNAME));
     }
 
     @Test
     public void testGetUserByUsernameWithAttributes() throws Exception {
-        provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME);
+        provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME, realmModel);
         verify(federatedUserModel, times(2)).getAttributes();
     }
 
     @Test
     public void testGetUserByUsernameWithoutAttributes() throws Exception {
-        UserModel user = provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_USERNAME);
+        UserModel user = provider.getUserByUsername(FEDERATED_USER_KNOWN_USERNAME, realmModel);
         verify(federatedUserModel, times(2)).getAttributes();
         verify(user, never()).setAttribute(anyString(), anyListOf(String.class));
     }
 
     @Test
     public void testGetUserByEmail() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_EMAIL));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_EMAIL, realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_EMAIL));
     }
 
     @Test
     public void testGetUserByEmailMixedCase() throws Exception {
-        assertNotNull(provider.getUserByUsername(realmModel, FEDERATED_USER_KNOWN_EMAIL.toUpperCase()));
+        assertNotNull(provider.getUserByUsername(FEDERATED_USER_KNOWN_EMAIL.toUpperCase(), realmModel));
         verify(federatedUserService).getUserDetails(eq(FEDERATED_USER_KNOWN_EMAIL));
     }
 
     @Test
-    public void testSearchByAttributes() throws Exception {
-        assertTrue(provider.searchByAttributes(null, realmModel, 10).isEmpty());
-        verifyZeroInteractions(federatedUserService);
-    }
-
-    @Test
-    public void testIsValid() throws Exception {
-
-        when(userModel.getUsername()).thenReturn(FEDERATED_USER_KNOWN_USERNAME);
-        when(federatedUserService.validateUserExists(eq(FEDERATED_USER_KNOWN_USERNAME))).thenReturn(Response.ok().build());
-
-        assertTrue(provider.isValid(realmModel, userModel));
-        verify(federatedUserService).validateUserExists(eq(FEDERATED_USER_KNOWN_USERNAME));
-    }
-
-    @Test
-    public void testGetSupportedCredentialTypes() throws Exception {
-        assertEquals(Collections.singleton(UserCredentialModel.PASSWORD), provider.getSupportedCredentialTypes(userModel));
-    }
-
-    @Test
-    public void testGetSupportedCredentialTypes1() throws Exception {
-        assertEquals(Collections.singleton(UserCredentialModel.PASSWORD), provider.getSupportedCredentialTypes());
-    }
-
-    @Test
     public void testValidCredentialsVarArg() throws Exception {
-        assertTrue(provider.validCredentials(realmModel, userModel, UserCredentialModel.password(FEDERATED_USER_KNOWN_PASSWORD)));
+        assertTrue(provider.isValid(realmModel, userModel, UserCredentialModel.password(FEDERATED_USER_KNOWN_PASSWORD)));
     }
 
-    @Test
-    public void testValidCredentialsList() throws Exception {
-        assertFalse(provider.validCredentials(realmModel, userModel, Arrays.asList(UserCredentialModel.password(UUID.randomUUID().toString()))));
-        assertTrue(provider.validCredentials(realmModel, userModel, Arrays.asList(UserCredentialModel.password(FEDERATED_USER_KNOWN_PASSWORD))));
-    }
 
     @Test
     public void testValidCredentialsListInvalid() throws Exception {
-        assertFalse(provider.validCredentials(realmModel, userModel, Arrays.asList(UserCredentialModel.password(UUID.randomUUID().toString()))));
-    }
-
-    @Test
-    public void testValidCredentialsNoUser() throws Exception {
-        CredentialValidationOutput result = provider.validCredentials(realmModel, UserCredentialModel.password(UUID.randomUUID().toString()));
-        assertEquals(CredentialValidationOutput.failed().getAuthStatus(), result.getAuthStatus());
+        assertFalse(provider.isValid(realmModel, userModel, UserCredentialModel.password(UUID.randomUUID().toString())));
     }
 
     @Test
