@@ -229,29 +229,6 @@ public class RemoteUserFederationProvider implements
 
 
 
-
-    // LDAPStorageProvider - Not implemented
-
-    // Removed 2.3.0
-    // @Override
-    // public Set<String> getSupportedCredentialTypes(UserModel user) {
-    //     return supportedCredentialTypes;
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public Set<String> getSupportedCredentialTypes() {
-    //     return supportedCredentialTypes;
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public boolean synchronizeRegistrations() {
-    //     return false;
-    // }
-
-
-
     // CredentialInputValidator
 
     @Override
