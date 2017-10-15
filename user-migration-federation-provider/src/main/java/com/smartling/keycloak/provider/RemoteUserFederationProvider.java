@@ -64,15 +64,15 @@ public class RemoteUserFederationProvider implements
     private final FederatedUserService federatedUserService;
 
     private static FederatedUserService buildClient(String uri) {
-
         ResteasyClient client = new ResteasyClientBuilder().disableTrustManager().build();
         ResteasyWebTarget target =  client.target(uri);
 
         return target
-                .proxyBuilder(FederatedUserService.class)
-                .classloader(FederatedUserService.class.getClassLoader())
-                .build();
+            .proxyBuilder(FederatedUserService.class)
+            .classloader(FederatedUserService.class.getClassLoader())
+            .build();
     }
+
 
     // Constructor
 
@@ -88,10 +88,35 @@ public class RemoteUserFederationProvider implements
     }
 
 
+    // UserStorageProvider
+
+    @Override
+    public void preRemove(RealmModel realm) {
+        // no-op
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, RoleModel role) {
+        // no-op
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group)
+    {
+        // no-op
+    }
+
+    @Override
+    public void close() {
+        // no-op
+    }
+
+
+    // UserLookupProvider
+
     // What does it do exactly?
-
     private UserModel createUserModel(RealmModel realm, String rawUsername) throws NotFoundException {
-
+        
         String username = rawUsername.toLowerCase().trim();
         FederatedUserModel remoteUser = federatedUserService.getUserDetails(username);
         LOG.infof("Creating user model for: %s", username);
@@ -128,10 +153,6 @@ public class RemoteUserFederationProvider implements
         return userModel;
     }
 
-
-
-    // UserLookupProvider
-
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
         LOG.infof("Get by email: %s", email);
@@ -165,34 +186,6 @@ public class RemoteUserFederationProvider implements
     }
 
    
-
-
-
-    // UserStorageProvider - needed for the factory
-
-    @Override
-    public void preRemove(RealmModel realm) {
-        // no-op
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, RoleModel role) {
-        // no-op
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, GroupModel group)
-    {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
-    }
-
-
-
     // CredentialInputValidator
 
     @Override
