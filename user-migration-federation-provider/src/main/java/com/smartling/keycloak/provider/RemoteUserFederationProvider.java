@@ -55,9 +55,9 @@ import java.util.Set;
 public class RemoteUserFederationProvider implements
         UserStorageProvider,
         UserLookupProvider,
+        // UserRegistrationProvider,
         CredentialInputValidator,
-        CredentialInputUpdater,
-        UserRegistrationProvider {
+        CredentialInputUpdater {
 
     private static final Logger LOG = Logger.getLogger(RemoteUserFederationProvider.class);
     private static final Set<String> supportedCredentialTypes = Collections.singleton(UserCredentialModel.PASSWORD);
@@ -92,21 +92,23 @@ public class RemoteUserFederationProvider implements
 
 
 
-    // UserRegistrationProvider - remove?
+    // UserRegistrationProvider - not implemented
 
-    // was register before 2.5.0
-    @Override
-    public UserModel addUser(RealmModel realm, String username) {
-        LOG.warn("User registration not supported.");
-        return null;
-    }
+    // // was register before 2.5.0
+    // @Override
+    // public UserModel addUser(RealmModel realm, String username) {
+    //     LOG.warn("User registration not supported.");
+    //     return null;
+    // }
 
-    @Override
-    public boolean removeUser(RealmModel realm, UserModel user) {
-        return true;
-    }
+    // @Override
+    // public boolean removeUser(RealmModel realm, UserModel user) {
+    //     return true;
+    // }
 
-    // ??
+
+
+    // What does it do exactly?
 
     private UserModel createUserModel(RealmModel realm, String rawUsername) throws NotFoundException {
 
@@ -202,7 +204,7 @@ public class RemoteUserFederationProvider implements
 
 
 
-    // UserStorageProvider
+    // UserStorageProvider - needed for the factory
 
     @Override
     public void preRemove(RealmModel realm) {
