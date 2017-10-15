@@ -25,6 +25,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.credential.CredentialInputValidator;
@@ -251,24 +253,23 @@ public class RemoteUserFederationProvider implements
 
 
 
-    // CredentialInputUpdater
+    // CredentialInputUpdater - good
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (input.getType().equals(CredentialModel.PASSWORD)) throw new ReadOnlyException("user is read only for this update");
+        
+        return false;
+    }    
 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
-        // Need to fill 2.3.0
     }
     
     @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        // Need to fill 2.4.0
-        return Collections.singleton(UserCredentialModel.KERBEROS);
+        return Collections.EMPTY_SET;
     }
-
-    @Override
-    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        // Need to fill 2.3.0
-        return true;
-    }    
 
 
 
