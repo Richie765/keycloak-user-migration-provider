@@ -63,14 +63,6 @@ public class RemoteUserFederationProviderFactoryTest {
     }
 
     @Test
-    public void testGetConfigurationOptions() throws Exception {
-        // List<ProviderConfigProperty> options = factory.getConfigProperties();
-        // assertNotNull(options);
-        // assertEquals(1, options.size());
-        // assertEquals("base_uri", Lists.newArrayList(options).get(0));
-    }
-
-    @Test
     public void testGetId() throws Exception {
         assertEquals(RemoteUserFederationProviderFactory.PROVIDER_NAME, factory.getId());
     }
