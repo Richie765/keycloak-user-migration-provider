@@ -161,6 +161,12 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        LOG.debug("Empty Group Member");
+        return Collections.emptyList();
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         // no-op
     }

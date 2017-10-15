@@ -25,7 +25,7 @@ version = '1.0.0' + (project.hasProperty('release') && project.ext.release ? '-R
 apply plugin: "com.github.zhurlik.jbossmodules"
 
 ext {
-    keycloakVersion = '1.7.0.Final'
+    keycloakVersion = '1.9.8.Final'
 }
 
 repositories {
@@ -50,7 +50,7 @@ modules {
         resources = ["user-migration-federation-provider-${version}.jar", "user-model-${version}.jar"]
         dependencies = [
                 [name: 'org.keycloak.keycloak-core'],
-                [name: 'org.keycloak.keycloak-model-api'],
+                [name: 'org.keycloak.keycloak-server-spi'],
                 [name: 'org.jboss.resteasy.resteasy-jaxrs'],
                 [name: 'org.jboss.logging'],
                 [name: 'org.apache.httpcomponents'],
