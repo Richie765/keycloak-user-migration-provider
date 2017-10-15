@@ -62,7 +62,6 @@ public class RemoteUserFederationProvider implements
         CredentialInputUpdater {
 
     private static final Logger LOG = Logger.getLogger(RemoteUserFederationProvider.class);
-    private static final Set<String> supportedCredentialTypes = Collections.singleton(UserCredentialModel.PASSWORD);
 
     private KeycloakSession session;
     protected ComponentModel model;
@@ -234,12 +233,6 @@ public class RemoteUserFederationProvider implements
     // CredentialInputValidator
 
     @Override
-    public boolean isValid(RealmModel realm,UserModel user,CredentialInput input) {
-        // Need to fill 2.3.0
-        return true;
-    }
-
-    @Override
     public boolean isConfiguredFor(RealmModel realm,UserModel user,String credentialType) {
         // Need to fill 2.3.0
         return true;
@@ -247,8 +240,34 @@ public class RemoteUserFederationProvider implements
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        // Need to fill 2.3.0
-        return true;
+        return credentialType.equals(CredentialModel.PASSWORD);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user,CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        LOG.debugf("Checking if user is valid: %s", user.getUsername());
+        Response response = federatedUserService.validateUserExists(user.getUsername());
+        LOG.infof("Checked if %s is valid: %d", user.getUsername(), response.getStatus());
+        if(HttpStatus.SC_OK != response.getStatus()) return false;
+
+        // Check password
+
+        LOG.infof("Validating credentials for %s", user.getUsername());
+
+        UserCredentialModel credentials = (UserCredentialModel)input;
+
+        response = federatedUserService.validateLogin(user.getUsername(), new UserCredentialsDto(credentials.getValue()));
+        boolean valid = HttpStatus.SC_OK == response.getStatus();
+
+        if (valid) {
+            this.session.userCredentialManager().updateCredential(realm, user, input);
+            // user.updateCredential(credentials);
+            user.setFederationLink(null);
+        }
+
+        return valid;        
     }
 
 
@@ -270,67 +289,4 @@ public class RemoteUserFederationProvider implements
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
         return Collections.EMPTY_SET;
     }
-
-
-
-
-
-    // ??
-
-
-
-
-
-
-    // Removed 2.3.0
-    // @Override
-    // public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-
-    //     LOG.infof("Validating credentials for %s", user.getUsername());
-
-    //     if (input == null || input.isEmpty()) {
-    //         throw new IllegalArgumentException("UserCredentialModel list is empty or null!");
-    //     }
-
-    //     UserCredentialModel credentials = input.get(0);
-    //     Response response = federatedUserService.validateLogin(user.getUsername(), new UserCredentialsDto(credentials.getValue()));
-    //     boolean valid = HttpStatus.SC_OK == response.getStatus();
-
-    //     if (valid) {
-    //         user.updateCredential(credentials);
-    //         user.setFederationLink(null);
-    //     }
-
-    //     return valid;
-    // }
-
-    // Removed 2.3.0
-    // @Override
-    // public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-    //     return validCredentials(realm, user, Arrays.asList(input));
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
-    //     return CredentialValidationOutput.failed();
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public UserModel validateAndProxy(RealmModel realm, UserModel local)
-    // {
-    //     return local;
-    // }
-
-    // Removed 2.5.0
-    // @Override
-    // public boolean isValid(RealmModel realm, UserModel local)
-    // {
-    //     LOG.debugf("Checking if user is valid: %s", local.getUsername());
-    //     Response response = federatedUserService.validateUserExists(local.getUsername());
-    //     LOG.infof("Checked if %s is valid: %d", local.getUsername(), response.getStatus());
-    //     return HttpStatus.SC_OK == response.getStatus();
-    // }
-
 }
