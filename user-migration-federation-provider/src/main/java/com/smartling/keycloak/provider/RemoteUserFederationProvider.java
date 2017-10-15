@@ -24,6 +24,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -182,10 +183,11 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
         // no-op
     }
 
-    @Override
-    public Set<String> getSupportedCredentialTypes(UserModel user) {
-        return supportedCredentialTypes;
-    }
+    // Removed 2.3.0
+    // @Override
+    // public Set<String> getSupportedCredentialTypes(UserModel user) {
+    //     return supportedCredentialTypes;
+    // }
 
     @Override
     public Set<String> getSupportedCredentialTypes() {
@@ -193,30 +195,61 @@ public class RemoteUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-
-        LOG.infof("Validating credentials for %s", user.getUsername());
-
-        if (input == null || input.isEmpty()) {
-            throw new IllegalArgumentException("UserCredentialModel list is empty or null!");
-        }
-
-        UserCredentialModel credentials = input.get(0);
-        Response response = federatedUserService.validateLogin(user.getUsername(), new UserCredentialsDto(credentials.getValue()));
-        boolean valid = HttpStatus.SC_OK == response.getStatus();
-
-        if (valid) {
-            user.updateCredential(credentials);
-            user.setFederationLink(null);
-        }
-
-        return valid;
+    public boolean isValid(RealmModel realm,UserModel user,CredentialInput input) {
+        // Need to fill 2.3.0
+        return true;
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
+    public boolean isConfiguredFor(RealmModel realm,UserModel user,String credentialType) {
+        // Need to fill 2.3.0
+        return true;
     }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        // Need to fill 2.3.0
+        return true;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        // Need to fill 2.3.0
+    }
+    
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        // Need to fill 2.3.0
+        return true;
+    }
+
+    // Removed 2.3.0
+    // @Override
+    // public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+
+    //     LOG.infof("Validating credentials for %s", user.getUsername());
+
+    //     if (input == null || input.isEmpty()) {
+    //         throw new IllegalArgumentException("UserCredentialModel list is empty or null!");
+    //     }
+
+    //     UserCredentialModel credentials = input.get(0);
+    //     Response response = federatedUserService.validateLogin(user.getUsername(), new UserCredentialsDto(credentials.getValue()));
+    //     boolean valid = HttpStatus.SC_OK == response.getStatus();
+
+    //     if (valid) {
+    //         user.updateCredential(credentials);
+    //         user.setFederationLink(null);
+    //     }
+
+    //     return valid;
+    // }
+
+    // Removed 2.3.0
+    // @Override
+    // public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
+    //     return validCredentials(realm, user, Arrays.asList(input));
+    // }
 
     @Override
     public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
