@@ -56,8 +56,8 @@ import java.util.Set;
  */
 public class RemoteUserFederationProvider implements
         UserStorageProvider,
-        UserLookupProvider,
-        CredentialInputValidator,
+        UserLookupProvider, // Basic login capabilities
+        CredentialInputValidator, // validate CredentialInput, i.e. verify a password
         CredentialInputUpdater {
 
     private static final Logger LOG = Logger.getLogger(RemoteUserFederationProvider.class);
