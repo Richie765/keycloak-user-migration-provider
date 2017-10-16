@@ -78,7 +78,7 @@ public class RemoteUserFederationProvider implements
 
     public RemoteUserFederationProvider(KeycloakSession session, ComponentModel model, String uri) {
         this(session, model, buildClient(uri));
-        LOG.debugf("Using validation base URI: " + uri);
+        LOG.infof("Using validation base URI: " + uri);
     }
 
     protected RemoteUserFederationProvider(KeycloakSession session, ComponentModel model, FederatedUserService federatedUserService) {
@@ -114,34 +114,34 @@ public class RemoteUserFederationProvider implements
 
     // UserLookupProvider
 
-    // What does it do exactly?
+    // When legacyUser is found, create user in Keycloak
     private UserModel createUserModel(RealmModel realm, String rawUsername) throws NotFoundException {
-        
         String username = rawUsername.toLowerCase().trim();
-        FederatedUserModel remoteUser = federatedUserService.getUserDetails(username);
         LOG.infof("Creating user model for: %s", username);
-        // Was useStorage
-        UserModel userModel = session.userLocalStorage().addUser(realm, username);
 
-        if (!username.equals(remoteUser.getEmail())) {
-            throw new IllegalStateException(String.format("Local and remote users differ: [%s != %s]", username, remoteUser.getUsername()));
+        FederatedUserModel legacyUser = federatedUserService.getUserDetails(username);
+        if (!username.equals(legacyUser.getEmail())) {
+            throw new IllegalStateException(String.format("Local and remote users differ: [%s != %s]", username, legacyUser.getUsername()));
         }
 
-        userModel.setFederationLink(model.getId());
-        userModel.setEnabled(remoteUser.isEnabled());
-        userModel.setEmail(username);
-        userModel.setEmailVerified(remoteUser.isEmailVerified());
-        userModel.setFirstName(remoteUser.getFirstName());
-        userModel.setLastName(remoteUser.getLastName());
+        UserModel userModel = session.userLocalStorage().addUser(realm, username);
+        LOG.info("User model created");
 
-        if (remoteUser.getAttributes() != null) {
-            Map<String, List<String>> attributes = remoteUser.getAttributes();
+        userModel.setFederationLink(model.getId());
+        userModel.setEnabled(legacyUser.isEnabled());
+        userModel.setEmail(username);
+        userModel.setEmailVerified(legacyUser.isEmailVerified());
+        userModel.setFirstName(legacyUser.getFirstName());
+        userModel.setLastName(legacyUser.getLastName());
+
+        if (legacyUser.getAttributes() != null) {
+            Map<String, List<String>> attributes = legacyUser.getAttributes();
             for (String attributeName : attributes.keySet())
                 userModel.setAttribute(attributeName, attributes.get(attributeName));
         }
 
-        if (remoteUser.getRoles() != null) {
-            for (String role : remoteUser.getRoles()) {
+        if (legacyUser.getRoles() != null) {
+            for (String role : legacyUser.getRoles()) {
                 RoleModel roleModel = realm.getRole(role);
                 if (roleModel != null) {
                     userModel.grantRole(roleModel);
@@ -165,9 +165,10 @@ public class RemoteUserFederationProvider implements
         }
     }
 
-    // Added 2.5.0
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
+        LOG.infof("Get by id: %s", id);
+
         StorageId storageId = new StorageId(id);
         String username = storageId.getExternalId();
         return getUserByUsername(username, realm);
@@ -190,26 +191,29 @@ public class RemoteUserFederationProvider implements
 
     @Override
     public boolean isConfiguredFor(RealmModel realm,UserModel user,String credentialType) {
+        LOG.infof("isConfiguredFor: %s", credentialType);
         return true;
     }
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
+        LOG.infof("supportsCredentialType: %s", credentialType);
         return credentialType.equals(CredentialModel.PASSWORD);
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user,CredentialInput input) {
-        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+        LOG.infof("isValid", user.getUsername());
+        if (!(input instanceof UserCredentialModel)) return false;
 
-        LOG.debugf("Checking if user is valid: %s", user.getUsername());
+        LOG.info("isValid: Checking if user exists");
         Response response = federatedUserService.validateUserExists(user.getUsername());
-        LOG.infof("Checked if %s is valid: %d", user.getUsername(), response.getStatus());
         if(HttpStatus.SC_OK != response.getStatus()) return false;
+        LOG.info("isValid: User exists");
 
         // Check password
 
-        LOG.infof("Validating credentials for %s", user.getUsername());
+        LOG.info("isValid: Validating credentials");
 
         UserCredentialModel credentials = (UserCredentialModel)input;
 
@@ -217,20 +221,22 @@ public class RemoteUserFederationProvider implements
         boolean valid = HttpStatus.SC_OK == response.getStatus();
 
         if (valid) {
+            LOG.info("isValid: Credentials are valid");
+            user.setFederationLink(null);
             this.session.userCredentialManager().updateCredential(realm, user, input);
             // user.updateCredential(credentials);
-            user.setFederationLink(null);
+            LOG.info("isValid: Credentials updated in Keycloak and FederationLink removed");
         }
 
         return valid;        
     }
 
 
-
-    // CredentialInputUpdater - good
+    // CredentialInputUpdater
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        LOG.info("updateCredential");
         if (input.getType().equals(CredentialModel.PASSWORD)) throw new ReadOnlyException("user is read only for this update");
         
         return false;
@@ -238,10 +244,12 @@ public class RemoteUserFederationProvider implements
 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        LOG.infof("disableCredentialType: %s", credentialType);
     }
     
     @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        LOG.info("getDisableableCredentialTypes");
         return Collections.EMPTY_SET;
     }
 }
