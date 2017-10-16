@@ -73,14 +73,14 @@ The steps below outline how use the examples.
 ### Start Keycloak & Import the Example Realm
 
 Start Keycloak, if it isn't already running, and log into the master realm as `admin`.
-Import the included `demo-realm.json` file.
+Click 'Add realm' and Import the included `demo-realm.json` file.
  
 ### Start the Legacy User Application
 
 From the location you cloned this repository into, start the legacy user service.
 
 ``` bash
-$ ./gradlew :legacy-user-app:bootRun
+./gradlew :legacy-user-app:bootRun
 ```
 
 ### Start the Portal Application
@@ -88,7 +88,7 @@ $ ./gradlew :legacy-user-app:bootRun
 From the location you cloned this repository into, start the demo portal.
 
 ``` bash
-$ ./gradlew :portal-demo:bootRun
+./gradlew :portal-demo:bootRun
 ```
 
 ### Access the Portal
