@@ -51,6 +51,7 @@ modules {
         dependencies = [
                 [name: 'org.keycloak.keycloak-core'],
                 [name: 'org.keycloak.keycloak-server-spi'],
+                [name: 'org.keycloak.keycloak-common'],
                 [name: 'org.jboss.resteasy.resteasy-jaxrs'],
                 [name: 'org.jboss.logging'],
                 [name: 'org.apache.httpcomponents'],
