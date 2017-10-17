@@ -1,0 +1,27 @@
+{
+  "name": "legacy-nodejs",
+  "version": "0.1.0",
+  "description": "A sample Node.js legacy user provider",
+  "main": "index.js",
+  "author": "Richard <richie765@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon -w users.json -w server.js server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^1.0.3",
+    "express": "^4.16.2",
+    "http-status-codes": "^1.3.0",
+    "morgan": "^1.9.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  },
+  "engines": {
+    "node": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Richie765/keycloak-user-migration-provider"
+  }
+}

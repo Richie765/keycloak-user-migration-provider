@@ -1,0 +1,47 @@
+[
+  {
+    "username": "craig@007.com",
+    "email": "craig@007.com",
+    "emailVerified": true,
+    "enabled": true,
+    "passwordHash": "$2a$10$a9/oikhhP8KF6FtccsgTyOCM/8V/cf5zUgTavuOaqfMEQHjPzkAhC",
+    "firstName": "Daniel",
+    "lastName": "Craig",
+    "attributes": {
+      "title": ["James Bond"]
+    },
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "username": "green@007.com",
+    "email": "green@007.com",
+    "emailVerified": true,
+    "enabled": true,
+    "passwordHash": "$2a$10$A8t6Z8SlYCjV6cGpR1mqNerSAltXu1r8nJtHRYs0yCmRuVity6l7y",
+    "firstName": "Eva",
+    "lastName": "Green",
+    "attributes": {
+      "title": ["Vesper Lynd"]
+    },
+    "roles"     : [
+      "user"
+    ]
+  },
+  {
+    "username": "mendes@007.com",
+    "email": "mendes@007.com",
+    "emailVerified": true,
+    "enabled": true,
+    "passwordHash": "$2a$10$qlh.bHnwVyOvWvDtEsqEr.VN5dvn3RaLCwpFeV5IILSeJ/pmIy/2K",
+    "firstName": "Sam",
+    "lastName": "Mendes",
+    "attributes": {
+      "title": ["Director"]
+    },
+    "roles": [
+      "user"
+    ]
+  }
+]

@@ -84,7 +84,9 @@ From the location you cloned this repository into, start the legacy user service
 The service will be running on port 9081.
 
 ``` bash
-./gradlew :legacy-user-app:bootRun
+cd legacy-user-app
+node install
+node start
 ```
 
 ### Start the Portal Application
