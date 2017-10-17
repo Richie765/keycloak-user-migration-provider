@@ -74,10 +74,14 @@ The steps below outline how use the examples.
 
 Start Keycloak, if it isn't already running, and log into the master realm as `admin`.
 Click 'Add realm' and Import the included `demo-realm.json` file.
+
+A new realm `Eon` will be created wich has the `User Migration API Provider`
+set up on `http://localhost:9081/migration`.
  
 ### Start the Legacy User Application
 
 From the location you cloned this repository into, start the legacy user service.
+The service will be running on port 9081.
 
 ``` bash
 ./gradlew :legacy-user-app:bootRun
