@@ -17,5 +17,4 @@
 rootProject.name = 'keycloak-user-federation-example'
 include 'user-model'
 include 'user-migration-federation-provider'
-include 'legacy-user-app'
 include 'portal-demo'

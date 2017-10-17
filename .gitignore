@@ -7,7 +7,6 @@ classes/
 ***/.project
 ***/.settings
 ***/.classpath
-legacy-user-app/bin/
 portal-demo/bin/
 user-migration-federation-provider/bin/
 user-model/bin/
